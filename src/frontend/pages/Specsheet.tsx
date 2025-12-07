@@ -103,8 +103,7 @@ const Specsheet: React.FC = () => {
   const cards = Array.from({ length: 4 }).map((_, i) => <Card key={i} />);
 
   return (
-    <section className="pt-[23px] pl-[62px] pr-[70px] pb-[100px]">
-      {/* ✅ 100px bottom padding added */}
+    <section className="mt-[23px] pt-[23px] pl-[62px] pr-[70px] pb-[100px]">
 
       <div className="w-full text-center">
         <h1
@@ -112,7 +111,7 @@ const Specsheet: React.FC = () => {
             fontFamily: 'Urbanist, system-ui, sans-serif',
             fontWeight: 600,
             fontSize: '55px',
-            lineHeight: '57.83px',
+            lineHeight: '0',
             textTransform: 'capitalize',
           }}
         >

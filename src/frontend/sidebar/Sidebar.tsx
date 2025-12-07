@@ -37,15 +37,17 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside
-      className="
+        className="
         w-[375px]
         flex-shrink-0
-        min-h-screen          /* ✅ sidebar container = page height */
+        min-h-screen
         border-r-[0.57px]
         border-[#FFFFFF]
-        -mt-[68.7px]
+        -mt-[105px]
+        pt-[15px]
         z-10
-      "
+        "
+
     >
       <div className="pt-[120.7px] pb-[32px] pl-[50px] pr-[73px]">
         <div className="mb-[50px]">
