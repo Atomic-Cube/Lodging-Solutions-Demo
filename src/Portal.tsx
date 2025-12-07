@@ -244,7 +244,7 @@ useEffect(() => {
         <h3>Secure Inline PDF</h3>
 
         <Document
-          file="/print-pdf.pdf"
+          file="/print1.pdf"
           onLoadSuccess={onDocumentLoadSuccess}
           onLoadError={(err) => {
             console.error('PDF load failed', err);
