@@ -1,222 +1,300 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import protectedImage from './apple.jpg';
+import { Document, Page, pdfjs } from 'react-pdf';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
-/* =======================
-   ✅ PROPS TYPE
-======================= */
+// ---------- PDF WORKER SETUP ----------
+try {
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).toString();
+} catch {
+  pdfjs.GlobalWorkerOptions.workerSrc =
+    'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.9.179/pdf.worker.min.js';
+}
+
+// ---------- TYPES ----------
 interface PortalProps {
   username?: string;
   closeWindow: () => void;
 }
 
-/* =======================
-   ✅ STYLES
-======================= */
+// ---------- STYLES ----------
 const portalStyles: React.CSSProperties = {
   userSelect: 'none',
-  WebkitUserSelect: 'none',
   height: '100vh',
   width: '100vw',
   padding: '20px',
   boxSizing: 'border-box',
   overflow: 'auto',
   position: 'relative',
+  fontFamily: 'sans-serif',
 };
 
 const blurredOverlay: React.CSSProperties = {
   position: 'fixed',
   inset: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  backdropFilter: 'blur(15px)',
-  WebkitBackdropFilter: 'blur(15px)',
+  backgroundColor: 'rgba(0,0,0,0.8)',
   display: 'flex',
-  flexDirection: 'column',
   justifyContent: 'center',
   alignItems: 'center',
-  zIndex: 1000,
+  zIndex: 10000,
   color: 'white',
-  textAlign: 'center',
-  pointerEvents: 'auto',
+  pointerEvents: 'auto', // ✅ blocks interaction correctly
 };
 
 const warningAlert: React.CSSProperties = {
   backgroundColor: '#cc0000',
-  padding: '20px',
+  padding: '18px',
   borderRadius: '8px',
-  fontSize: '1.2em',
-  fontWeight: 'bold',
+  fontSize: '1.1em',
+  fontWeight: '700',
 };
 
-const contentStyles: React.CSSProperties = {
-  padding: '10px',
-  position: 'relative',
-  backgroundImage: `repeating-linear-gradient(45deg, rgba(0,0,0,.02) 0, rgba(0,0,0,.02) 1px, transparent 1px, transparent 100px)`,
+const pdfContainerStyle: React.CSSProperties = {
+  border: '1px solid #999',
+  padding: '12px',
+  background: '#fafafa',
+  userSelect: 'none',
+  maxWidth: '900px',
+  margin: '12px auto',
 };
 
 const protectedImageContainerStyles: React.CSSProperties = {
-  backgroundImage: `url(${protectedImage})`,
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
   width: '600px',
   height: '400px',
+  margin: '20px auto',
   position: 'relative',
   overflow: 'hidden',
-  margin: '20px auto',
   border: '1px solid #007bff',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#222',
+};
+
+const imageElementStyle: React.CSSProperties = {
+  maxWidth: '100%',
+  maxHeight: '100%',
+  objectFit: 'cover',
+  display: 'block',
+  pointerEvents: 'none',
   userSelect: 'none',
 };
 
 const imageWatermarkStyle: React.CSSProperties = {
   position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%) rotate(-45deg)',
-  opacity: 0.25,
-  fontSize: '3em',
-  pointerEvents: 'none',
+  transform: 'rotate(-30deg)',
+  opacity: 0.24,
   color: '#fff',
-  fontWeight: 'bold',
+  fontSize: '3rem',
+  fontWeight: 700,
+  pointerEvents: 'none',
+  userSelect: 'none',
   whiteSpace: 'nowrap',
-  width: '150%',
-  height: '150%',
-  display: 'flex',
-  justifyContent: 'center',
-  alignItems: 'center',
 };
 
 const pageWatermarkStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%) rotate(-45deg)',
-  opacity: 0.08,
-  fontSize: '2em',
-  pointerEvents: 'none',
+  position: 'fixed',
+  inset: 0,
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  fontSize: '2.8rem',
   color: 'red',
-  fontWeight: 'bold',
-  whiteSpace: 'nowrap',
+  opacity: 0.18,
+  transform: 'rotate(-35deg)',
+  pointerEvents: 'none',
+  zIndex: 9999,
 };
 
-/* =======================
-   ✅ COMPONENT
-======================= */
+// ---------- COMPONENT ----------
 const Portal: React.FC<PortalProps> = ({ username = 'UNKNOWN', closeWindow }) => {
-  const [isBlurred, setIsBlurred] = useState<boolean>(!document.hasFocus());
+  const [isBlurred, setIsBlurred] = useState(false);
   const [warningMessage, setWarningMessage] = useState<string>('');
 
-  const blurLockRef = useRef<boolean>(false);
-  const devtoolsDetectedRef = useRef<boolean>(false);
-  const checkIntervalRef = useRef<number | null>(null);
+  // ✅ LIVE FORENSIC CLOCK (FIXES YOUR 28:45 BUG)
+  const [now, setNow] = useState<Date>(new Date());
 
-  const showTempWarning = (msg: string, ms = 2500) => {
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // PDF STATE
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [pageNumber, setPageNumber] = useState<number>(1);
+
+  const pageWrapperRef = useRef<HTMLDivElement | null>(null);
+  const [pageWidth, setPageWidth] = useState<number>(600);
+
+  useEffect(() => {
+    const setWidth = () => {
+      const w = pageWrapperRef.current
+        ? pageWrapperRef.current.clientWidth - 40
+        : 600;
+      setPageWidth(Math.max(300, Math.min(w, 900)));
+    };
+
+    setWidth();
+    window.addEventListener('resize', setWidth);
+    return () => window.removeEventListener('resize', setWidth);
+  }, []);
+
+  const onDocumentLoadSuccess = useCallback((pdf: PDFDocumentProxy) => {
+    setNumPages(pdf.numPages);
+    setPageNumber(1);
+  }, []);
+
+  const showTempWarning = useCallback((msg: string, ms = 2500) => {
     setWarningMessage(msg);
     setTimeout(() => setWarningMessage(''), ms);
+  }, []);
+
+
+
+const firstRunRef = useRef(true);
+
+useEffect(() => {
+  const handleBlur = () => {
+    if (firstRunRef.current) return;
+
+    console.log('BLUR TRIGGERED');
+    setIsBlurred(true);
+    showTempWarning('Window lost focus — content blurred');
   };
+
+  const handleFocus = () => {
+    if (firstRunRef.current) return;
+
+    console.log('FOCUS RESTORED');
+    setTimeout(() => {
+      setIsBlurred(false); // ✅ THIS IS THE UNBLOCK
+    }, 150);
+  };
+
+  const handleVisibility = () => {
+    if (firstRunRef.current) return;
+
+    if (document.hidden) {
+      console.log('TAB HIDDEN');
+      setIsBlurred(true);
+      showTempWarning('Tab hidden — content blurred');
+    } else {
+      console.log('TAB VISIBLE');
+      setTimeout(() => {
+        setIsBlurred(false); // ✅ THIS IS THE UNBLOCK
+      }, 150);
+    }
+  };
+
+  window.addEventListener('blur', handleBlur);
+  window.addEventListener('focus', handleFocus);
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  // ✅ allow security AFTER initial load
+  const unlock = setTimeout(() => {
+    firstRunRef.current = false;
+  }, 600);
+
+  return () => {
+    clearTimeout(unlock);
+    window.removeEventListener('blur', handleBlur);
+    window.removeEventListener('focus', handleFocus);
+    document.removeEventListener('visibilitychange', handleVisibility);
+  };
+}, [showTempWarning]);
+
+
+
 
   const handleNoCopy = useCallback((e: React.ClipboardEvent) => {
     e.preventDefault();
-    showTempWarning('Copying is blocked.');
-  }, []);
+    showTempWarning('Copy blocked');
+  }, [showTempWarning]);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
-    showTempWarning('Right-click blocked.');
-  }, []);
+    showTempWarning('Right click blocked');
+  }, [showTempWarning]);
 
-  const handleDragStart = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
-
-  /* =======================
-     ✅ EFFECTS
-  ======================= */
-
-  useEffect(() => {
-    const setBlur = (msg: string) => {
-      if (blurLockRef.current) return;
-      blurLockRef.current = true;
-      setIsBlurred(true);
-      showTempWarning(msg, 4000);
-      setTimeout(() => (blurLockRef.current = false), 700);
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setBlur('Window lost focus — blurred.');
-      } else {
-        setTimeout(() => setIsBlurred(false), 500);
-      }
-    };
-
-    window.addEventListener('blur', () => setBlur('Window blurred.'));
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const detectDevTools = () => {
-      const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
-      const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
-      const devtoolsOpen = widthDiff > 160 || heightDiff > 160;
-
-      if (devtoolsOpen && !devtoolsDetectedRef.current) {
-        devtoolsDetectedRef.current = true;
-        setIsBlurred(true);
-        showTempWarning('DevTools detected.');
-      } else if (!devtoolsOpen && devtoolsDetectedRef.current) {
-        devtoolsDetectedRef.current = false;
-        setIsBlurred(false);
-      }
-    };
-
-    checkIntervalRef.current = window.setInterval(detectDevTools, 1200);
-
-    return () => {
-      if (checkIntervalRef.current) clearInterval(checkIntervalRef.current);
-    };
-  }, []);
-
-  /* =======================
-     ✅ RENDER
-  ======================= */
   return (
-    <div
-      style={portalStyles}
-      onCopy={handleNoCopy}
-      onContextMenu={handleContextMenu}
-      onDragStart={handleDragStart}
-      draggable={false}
-    >
+    <div style={portalStyles} onCopy={handleNoCopy} onContextMenu={handleContextMenu}>
       {isBlurred && (
         <div style={blurredOverlay}>
-          <div style={warningAlert}>⚠️ Security Protection Active</div>
+          <div style={warningAlert}>⚠️ SECURITY ALERT — CONTENT BLURRED</div>
         </div>
       )}
 
-      <div style={contentStyles}>
-        <h1>CONFIDENTIAL PORTAL</h1>
-        <p>
-          Welcome, <strong>{username}</strong>
-        </p>
-
-        <button onClick={closeWindow} style={{ marginBottom: '20px', padding: '10px' }}>
-          Close Secure Window
-        </button>
-
-        <div style={protectedImageContainerStyles}>
-          <div style={imageWatermarkStyle}>CONFIDENTIAL — {username}</div>
-        </div>
-
-        <div style={pageWatermarkStyle}>
-          USER: {username.toUpperCase()} — {new Date().toLocaleString()}
-        </div>
-
-        {warningMessage && <div style={{ color: 'red', fontWeight: 'bold' }}>{warningMessage}</div>}
+      {/* ✅ FORENSIC WATERMARK WITH LIVE TIME */}
+      <div style={pageWatermarkStyle}>
+        USER: {username.toUpperCase()} —{' '}
+        {now.toLocaleDateString('en-CA')} {now.toLocaleTimeString('en-GB')}
       </div>
+
+      <h1>CONFIDENTIAL PORTAL</h1>
+
+      <button onClick={closeWindow} style={{ marginBottom: '16px' }}>
+        Close Secure Window
+      </button>
+
+      {/* ✅ INLINE PDF */}
+      <div style={pdfContainerStyle} ref={pageWrapperRef}>
+        <h3>Secure Inline PDF</h3>
+
+        <Document
+          file="/print-pdf.pdf"
+          onLoadSuccess={onDocumentLoadSuccess}
+          onLoadError={(err) => {
+            console.error('PDF load failed', err);
+            showTempWarning('Failed to load PDF');
+          }}
+          
+        >
+         <Page
+  pageNumber={pageNumber}
+  scale={1.4}
+  renderMode="canvas"
+  renderTextLayer={false}        // ✅ DISABLE duplicate corrupted text
+  renderAnnotationLayer={false}
+  loading={<div>Rendering page…</div>}
+/>
+
+        </Document>
+
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <button
+            onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+            disabled={pageNumber <= 1}
+          >
+            Previous
+          </button>
+
+          <span style={{ margin: '0 12px' }}>
+            Page {pageNumber} of {numPages ?? '—'}
+          </span>
+
+          <button
+            onClick={() => setPageNumber(p => Math.min(numPages || 1, p + 1))}
+            disabled={!numPages || pageNumber >= (numPages || 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {/* ✅ PROTECTED IMAGE */}
+      <div style={protectedImageContainerStyles}>
+        <img src={protectedImage} alt="protected" style={imageElementStyle} />
+        <div style={imageWatermarkStyle}>CONFIDENTIAL — {username}</div>
+      </div>
+
+      {warningMessage && (
+        <div style={{ color: 'red', marginTop: 12, fontWeight: 700 }}>
+          {warningMessage}
+        </div>
+      )}
     </div>
   );
 };
