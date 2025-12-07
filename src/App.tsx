@@ -1,35 +1,30 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React from 'react';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+import './App.css';
+import { MainLayout, Home, About, Photos, Videos, ThreeSixty, Specsheet, TimeLapses, Sitemap, NotFound } from './frontend';
 
-function App() {
-  const [count, setCount] = useState(0)
-
+const App: React.FC = () => {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <Router>
+      <Routes>
+        <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+        <Route path="/about" element={<MainLayout><About /></MainLayout>} />
+        <Route path="/photos" element={<MainLayout><Photos /></MainLayout>} />
+        <Route path="/videos" element={<MainLayout><Videos /></MainLayout>} />
+        <Route path="/360" element={<MainLayout><ThreeSixty /></MainLayout>} />
+        <Route path="/specsheet" element={<MainLayout><Specsheet /></MainLayout>} />
+        <Route path="/timelapses" element={<MainLayout><TimeLapses /></MainLayout>} />
+        <Route path="/sitemap" element={<MainLayout><Sitemap /></MainLayout>} />
+        <Route path="/404" element={<MainLayout><NotFound /></MainLayout>} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
+      </Routes>
+    </Router>
+  );
+};
 
-export default App
+export default App;
