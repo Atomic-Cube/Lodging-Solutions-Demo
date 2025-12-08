@@ -87,7 +87,20 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
   const [warningMessage, setWarningMessage] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
 
+  useEffect(() => {
+  const disableRightClick = (e: MouseEvent) => {
+    e.preventDefault();
+  };
+
+  window.addEventListener("contextmenu", disableRightClick);
+
+  return () => {
+    window.removeEventListener("contextmenu", disableRightClick);
+  };
+}, []);
+
   // ✅ LIVE FORENSIC CLOCK (NO PDF REFRESH NOW)
+
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
