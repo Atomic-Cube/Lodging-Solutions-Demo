@@ -32,7 +32,7 @@ interface PortalProps {
   closeWindow: () => void;
 }
 
-/* ===================== ✅ STABLE SECURE PDF COMPONENT (NO REFRESH) ===================== */
+/* ===================== ✅ SECURE PDF WITH ZOOM ===================== */
 const SecurePDF = React.memo(function SecurePDF({
   pageNumber,
   setPageNumber,
@@ -41,20 +41,39 @@ const SecurePDF = React.memo(function SecurePDF({
   setPageNumber: React.Dispatch<React.SetStateAction<number>>;
 }) {
   const [numPages, setNumPages] = useState<number | null>(null);
+  const [scale, setScale] = useState(1); // zoom factor
   const wrapperRef = useRef<HTMLDivElement | null>(null);
+  const [pdfWidth, setPdfWidth] = useState(800); // default PDF page width
 
   const onLoad = useCallback((pdf: PDFDocumentProxy) => {
     setNumPages(pdf.numPages);
+
+    // Get first page dimensions to compute initial scale
+    pdf.getPage(1).then((page) => {
+      const viewport = page.getViewport({ scale: 1 });
+      setPdfWidth(viewport.width);
+
+      const containerWidth = (wrapperRef.current?.clientWidth ?? 900) - 40; // ✅ add 20px margin on each side
+      setScale(containerWidth / viewport.width); // fit width initially
+    });
   }, []);
+
+  const zoomIn = () => setScale((s) => Math.min(s + 0.2, 3));
+  const zoomOut = () => setScale((s) => Math.max(s - 0.2, 0.5));
 
   return (
     <div style={pdfContainerStyle} ref={wrapperRef}>
-      <h3>Secure Inline PDF</h3>
+      {/* Zoom buttons at top */}
+      <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+        <button onClick={zoomOut} style={{ marginRight: 8 }}>- Zoom Out</button>
+        <button onClick={zoomIn} style={{ marginRight: 8 }}>+ Zoom In</button>
+        <span>Zoom: {(scale * 100).toFixed(0)}%</span>
+      </div>
 
-      <Document file="/print1.pdf" onLoadSuccess={onLoad}>
+      <Document file="/Laundry-Slick.pdf" onLoadSuccess={onLoad}>
         <Page
           pageNumber={pageNumber}
-          scale={1.4}
+          scale={scale}
           renderMode="canvas"
           renderTextLayer={false}
           renderAnnotationLayer={false}
@@ -65,11 +84,9 @@ const SecurePDF = React.memo(function SecurePDF({
         <button onClick={() => setPageNumber((p) => Math.max(1, p - 1))} disabled={pageNumber <= 1}>
           Previous
         </button>
-
         <span style={{ margin: "0 12px" }}>
           Page {pageNumber} of {numPages ?? "—"}
         </span>
-
         <button
           onClick={() => setPageNumber((p) => Math.min(numPages || 1, p + 1))}
           disabled={!numPages || pageNumber >= (numPages || 1)}
@@ -87,24 +104,19 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
   const [warningMessage, setWarningMessage] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
 
-useEffect(() => {
-  const disableRightClick = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-  };
-
-  document.addEventListener("contextmenu", disableRightClick, {
-    capture: true,
-    passive: false,
-  });
-
-  return () => {
-    document.removeEventListener("contextmenu", disableRightClick, true);
-  };
-}, []);
-
-
-  // ✅ LIVE FORENSIC CLOCK (NO PDF REFRESH NOW)
+  useEffect(() => {
+    const disableRightClick = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    };
+    document.addEventListener("contextmenu", disableRightClick, {
+      capture: true,
+      passive: false,
+    });
+    return () => {
+      document.removeEventListener("contextmenu", disableRightClick, true);
+    };
+  }, []);
 
   const [now, setNow] = useState(new Date());
   useEffect(() => {
@@ -125,12 +137,10 @@ useEffect(() => {
       setIsBlurred(true);
       showTempWarning("Window lost focus — content blurred");
     };
-
     const handleFocus = () => {
       if (firstRunRef.current) return;
       setTimeout(() => setIsBlurred(false), 150);
     };
-
     const handleVisibility = () => {
       if (firstRunRef.current) return;
       if (document.hidden) {
@@ -140,7 +150,6 @@ useEffect(() => {
         setTimeout(() => setIsBlurred(false), 150);
       }
     };
-
     window.addEventListener("blur", handleBlur);
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleVisibility);
@@ -160,13 +169,12 @@ useEffect(() => {
   return (
     <BrowserRouter>
       <div
-  style={portalStyles}
-  onContextMenu={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  }}
->
-
+        style={portalStyles}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+      >
         {isBlurred && (
           <div style={blurredOverlay}>
             <div style={warningAlert}>⚠️ SECURITY ALERT — CONTENT BLURRED</div>
@@ -174,81 +182,46 @@ useEffect(() => {
         )}
 
         <div style={pageWatermarkStyle}>
-          USER: {username.toUpperCase()} —{" "}
-          {now.toLocaleDateString("en-CA")} {now.toLocaleTimeString("en-GB")}
+          USER: {username.toUpperCase()} — {now.toLocaleDateString("en-CA")} {now.toLocaleTimeString("en-GB")}
         </div>
 
+        <div style={{ minHeight: 0, overflow: "hidden", display: "flex" }}>
+          <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+            <Routes>
+              <Route path="/" element={<MainLayout><Home /></MainLayout>} />
+              <Route path="/about" element={<MainLayout><About /></MainLayout>} />
 
-        {/* ✅ ROUTE CONTAINER LOCKED TO GRID SLOT */}
-<div style={{ minHeight: 0, overflow: "hidden", display: "flex" }}>
-  {/* ✅ ONLY THIS AREA SCROLLS */}
-<div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-  <Routes>
-    <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-    <Route path="/about" element={<MainLayout><About /></MainLayout>} />
+              <Route
+                path="/photos"
+                element={
+                  <MainLayout>
+                    <Photos />
+                    <div style={protectedImageContainerStyles}>
+                      <img src={protectedImage} style={imageElementStyle} />
+                      <div style={imageWatermarkStyle}>CONFIDENTIAL — {username}</div>
+                    </div>
+                  </MainLayout>
+                }
+              />
 
-    <Route
-      path="/photos"
-      element={
-        <MainLayout>
-          <Photos />
-          <div style={protectedImageContainerStyles}>
-            <img src={protectedImage} style={imageElementStyle} />
-            
-            <div style={imageWatermarkStyle}>
-              CONFIDENTIAL — {username}
-            </div>
+              <Route
+                path="/specsheet"
+                element={
+                  <MainLayout>
+                    <SecurePDF pageNumber={pageNumber} setPageNumber={setPageNumber} />
+                  </MainLayout>
+                }
+              />
+
+              <Route path="/sitemap" element={<MainLayout><Sitemap /></MainLayout>} />
+              <Route path="/404" element={<MainLayout><NotFound /></MainLayout>} />
+              <Route path="*" element={<Navigate to="/404" replace />} />
+            </Routes>
           </div>
-          <div style={protectedImageContainerStyles}>
-            <img src={protectedImage} style={imageElementStyle} />
-            
-            <div style={imageWatermarkStyle}>
-              CONFIDENTIAL — {username}
-            </div>
-          </div>
-          <div style={protectedImageContainerStyles}>
-            <img src={protectedImage} style={imageElementStyle} />
-            
-            <div style={imageWatermarkStyle}>
-              CONFIDENTIAL — {username}
-            </div>
-          </div>
-        </MainLayout>
-      }
-    />
-
-    {/*
-    <Route path="/videos" element={<MainLayout><Videos /></MainLayout>} />
-    <Route path="/360" element={<MainLayout><ThreeSixty /></MainLayout>} />
-    }*/} 
-
-    {/* ✅ SPECSSHEET — PDF ONLY, SCROLLS PROPERLY */}
-    <Route
-      path="/specsheet"
-      element={
-        <MainLayout>
-          <SecurePDF
-            pageNumber={pageNumber}
-            setPageNumber={setPageNumber}
-          />
-        </MainLayout>
-      }
-    />
-
-    
-    <Route path="/sitemap" element={<MainLayout><Sitemap /></MainLayout>} />
-    <Route path="/404" element={<MainLayout><NotFound /></MainLayout>} />
-    <Route path="*" element={<Navigate to="/404" replace />} />
-  </Routes>
-</div>
-
-</div>
-
+        </div>
 
         {warningMessage && (
-          <div style={{ color: "red", marginTop: 12, fontWeight: 700 }}>
-            {warningMessage}
-          </div>
+          <div style={{ color: "red", marginTop: 12, fontWeight: 700 }}>{warningMessage}</div>
         )}
       </div>
     </BrowserRouter>
@@ -258,7 +231,7 @@ useEffect(() => {
 export default Portal;
 
 /* ===================== ✅ STYLES ===================== */
-const portalStyles: React.CSSProperties = {
+const portalStyles: any = {
   userSelect: "none",
   height: "100vh",
   width: "100vw",
@@ -266,10 +239,10 @@ const portalStyles: React.CSSProperties = {
   fontFamily: "sans-serif",
   display: "flex",
   flexDirection: "column",
-  overflow: "hidden", // ✅ lock outer shell only
+  overflow: "hidden",
+  WebkitUserDrag: "none",
+  userDrag: "none",
 };
-
-
 
 const blurredOverlay: React.CSSProperties = {
   position: "fixed",
@@ -295,15 +268,16 @@ const pdfContainerStyle: React.CSSProperties = {
   padding: "12px",
   background: "#fafafa",
   userSelect: "none",
-  maxWidth: "900px",
+  maxWidth: "100%",
   margin: "0 auto",
-  height: "100%",        // ✅ LOCKED
-  minHeight: 0,          // ✅ ✅ ✅ THIS FIXES THE SCROLL BUG
-  overflowY: "auto",     // ✅ ONLY PDF SCROLLS
-  overflowX: "hidden",
+  minHeight: 0,
+  height: "100%",
+  overflowY: "auto",
+  overflowX: "auto", // ✅ allow horizontal scroll
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center", // center PDF
 };
-
-
 
 const protectedImageContainerStyles: React.CSSProperties = {
   width: "600px",
