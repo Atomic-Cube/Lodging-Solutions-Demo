@@ -24,11 +24,11 @@ function findImageUrl(name: string) {
 }
 
 const buttons = [
-  { key: 'videos', label: 'Videos', to: '/videos' },
+  /*{ key: 'videos', label: 'Videos', to: '/videos' },*/
   { key: 'photos', label: 'Photos', to: '/photos' },
-  { key: 'three60', label: '360', to: '/360' },
+  /*{ key: 'three60', label: '360', to: '/360' },*/
   { key: 'specsheet', label: 'Specsheets', to: '/specsheet' },
-  { key: 'timelapses', label: 'Time lapses', to: '/timelapses' },
+  /*{ key: 'timelapses', label: 'Time lapses', to: '/timelapses' },*/
   { key: 'sitemap', label: 'Sitemap', to: '/sitemap' },
 ];
 

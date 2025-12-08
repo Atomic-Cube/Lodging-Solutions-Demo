@@ -87,17 +87,22 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
   const [warningMessage, setWarningMessage] = useState("");
   const [pageNumber, setPageNumber] = useState(1);
 
-  useEffect(() => {
+useEffect(() => {
   const disableRightClick = (e: MouseEvent) => {
     e.preventDefault();
+    e.stopImmediatePropagation();
   };
 
-  window.addEventListener("contextmenu", disableRightClick);
+  document.addEventListener("contextmenu", disableRightClick, {
+    capture: true,
+    passive: false,
+  });
 
   return () => {
-    window.removeEventListener("contextmenu", disableRightClick);
+    document.removeEventListener("contextmenu", disableRightClick, true);
   };
 }, []);
+
 
   // ✅ LIVE FORENSIC CLOCK (NO PDF REFRESH NOW)
 
@@ -154,7 +159,14 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
 
   return (
     <BrowserRouter>
-      <div style={portalStyles}>
+      <div
+  style={portalStyles}
+  onContextMenu={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }}
+>
+
         {isBlurred && (
           <div style={blurredOverlay}>
             <div style={warningAlert}>⚠️ SECURITY ALERT — CONTENT BLURRED</div>
