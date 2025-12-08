@@ -1,49 +1,44 @@
-<<<<<<< HEAD
-import { Routes, Route } from 'react-router-dom';
-import Login from './Login';
-import usePortalWindow from './usePortalWindow';
-
-const App = () => {
-  const { openPortalWindow } = usePortalWindow();
-=======
-import React from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from 'react-router-dom';
-import './App.css';
-import { MainLayout, Home, About, Photos, Videos, ThreeSixty, Specsheet, TimeLapses, Sitemap, NotFound } from './frontend';
->>>>>>> origin/Frontend
+import React from "react";
+import Login from "./Login";
+import "./App.css";
 
 const App: React.FC = () => {
-  return (
-<<<<<<< HEAD
-    <Routes>
-      <Route
-        path="/"
-        element={<Login openPortal={openPortalWindow} />}
-      />
-      <Route path="*" element={<h1>404 Not Found</h1>} />
-    </Routes>
-=======
-    <Router>
-      <Routes>
-        <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-        <Route path="/about" element={<MainLayout><About /></MainLayout>} />
-        <Route path="/photos" element={<MainLayout><Photos /></MainLayout>} />
-        <Route path="/videos" element={<MainLayout><Videos /></MainLayout>} />
-        <Route path="/360" element={<MainLayout><ThreeSixty /></MainLayout>} />
-        <Route path="/specsheet" element={<MainLayout><Specsheet /></MainLayout>} />
-        <Route path="/timelapses" element={<MainLayout><TimeLapses /></MainLayout>} />
-        <Route path="/sitemap" element={<MainLayout><Sitemap /></MainLayout>} />
-        <Route path="/404" element={<MainLayout><NotFound /></MainLayout>} />
-        <Route path="*" element={<Navigate to="/404" replace />} />
-      </Routes>
-    </Router>
->>>>>>> origin/Frontend
-  );
+  const openPortal = () => {
+    const newWindow = window.open("", "_blank", "width=1200,height=800,left=200,top=100");
+    if (!newWindow) return null;
+
+    // Write a minimal HTML skeleton
+    newWindow.document.write(`
+      <html>
+        <head><title>Secure Portal</title></head>
+        <body><div id="root"></div></body>
+      </html>
+    `);
+
+    // Important: clone all <meta>, <link>, <style> tags from current document.head
+    // so the popup receives the same CSS (Tailwind/App.css/fonts...)
+    const currentHead = document.head;
+    const newHead = newWindow.document.head;
+
+    // Copy meta, link and style nodes
+    currentHead.querySelectorAll("meta, link, style").forEach((node) => {
+      try {
+        newHead.appendChild(node.cloneNode(true));
+      } catch (err) {
+        // ignore clone errors for any odd nodes
+        // eslint-disable-next-line no-console
+        console.warn("Could not clone head node for popup", err);
+      }
+    });
+
+    // Close the document so resources begin loading
+    newWindow.document.close();
+
+    return newWindow;
+  };
+
+  return <Login openPortal={openPortal} />;
 };
 
 export default App;
+

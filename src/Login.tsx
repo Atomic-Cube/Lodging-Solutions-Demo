@@ -103,7 +103,7 @@ const Login: React.FC<LoginProps> = ({ openPortal }) => {
 
   return (
     <div style={styles.container}>
-      <h2>Secure Portal Login</h2>
+      <h2 style={{ color: "black" }}>Secure Portal Login</h2>
 
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.inputGroup}>

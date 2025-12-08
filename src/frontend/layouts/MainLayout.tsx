@@ -7,22 +7,31 @@ type Props = {
   children: React.ReactNode;
 };
 
-
 const MainLayout: React.FC<Props> = ({ children }) => {
   return (
-    // Mobile-first: a small left padding on xsmall devices, but desktop uses exact 50px left padding.
-    <div className="min-h-screen flex flex-col bg-slate-900 text-white pl-4 md:pl-[50px]">
+    // ✅ Full window locked, NO scrolling on layout
+    <div className="h-screen flex flex-col bg-slate-900 text-white pl-4 md:pl-[50px] overflow-hidden">
+
+      {/* ✅ FIXED HEADER */}
       <Nav />
 
-      <div className="flex flex-1">
+      {/* ✅ BODY AREA (SIDEBAR FIXED, CONTENT SCROLLS) */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* ✅ FIXED SIDEBAR */}
         <Sidebar />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto">{children}</div>
+        {/* ✅ ONLY THIS SCROLLS */}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
+
       </div>
 
-      <Footer />
+      {/* ✅ FIXED FOOTER */}
+      
     </div>
   );
 };

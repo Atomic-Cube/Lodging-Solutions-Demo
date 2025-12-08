@@ -37,23 +37,22 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside
-        className="
+      className="
         w-[375px]
         flex-shrink-0
-        min-h-screen
         border-r-[0.57px]
         border-[#FFFFFF]
-        -mt-[105px]
-        pt-[15px]
         z-10
-        "
-
+        flex
+        flex-col
+      "
     >
-      <div className="pt-[120.7px] pb-[32px] pl-[50px] pr-[73px]">
-        <div className="mb-[50px]">
-          <h2 className="text-[48px] leading-tight font-semibold">
+      {/* ✅ Everything fits vertically now */}
+      <div className="pt-6 pl-[40px] pr-[40px]">
+        {/* ✅ Smaller title */}
+        <div className="mb-6">
+          <h2 className="text-[36px] leading-tight font-semibold">
             Kitchen
-            <br />
             Trailer
           </h2>
         </div>
@@ -68,31 +67,31 @@ const Sidebar: React.FC = () => {
                 findImageUrl(b.label.toLowerCase());
 
               return (
-                <li key={b.key} className="mb-[12px] last:mb-0">
+                <li key={b.key} className="mb-[10px] last:mb-0">
                   <Link
                     to={b.to}
-                    className={`flex items-center w-full h-[68px] rounded-[27px] border border-[#FFFFFF33] pl-[22px] pr-[16px] text-left transition-colors text-[#FFFFFF] ${
+                    className={`flex items-center w-full h-[56px] rounded-[24px] border border-[#FFFFFF33] pl-[18px] pr-[14px] text-left transition-colors text-[#FFFFFF] ${
                       isActive ? 'bg-[#262627]' : 'bg-transparent'
                     } hover:bg-[#262627]`}
                   >
                     <div
                       className="flex items-center"
-                      style={{ width: 32, height: 32 }}
+                      style={{ width: 28, height: 28 }}
                     >
                       {imgUrl ? (
                         <img
                           src={imgUrl}
                           alt={b.label}
-                          style={{ width: 32, height: 32 }}
+                          style={{ width: 28, height: 28 }}
                           className="object-contain"
                         />
                       ) : (
                         <div
                           className="rounded-full bg-gray-600 flex items-center justify-center"
-                          style={{ width: 32, height: 32 }}
+                          style={{ width: 28, height: 28 }}
                           aria-hidden
                         >
-                          <span className="text-sm font-semibold text-white">
+                          <span className="text-xs font-semibold text-white">
                             {b.label.charAt(0)}
                           </span>
                         </div>
@@ -100,12 +99,12 @@ const Sidebar: React.FC = () => {
                     </div>
 
                     <div className="ml-3 flex-1">
-                      <span className="text-[18px] font-semibold text-[#FFFFFF]">
+                      <span className="text-[16px] font-semibold text-[#FFFFFF]">
                         {b.label}
                       </span>
                     </div>
 
-                    <div style={{ width: 40, height: 40 }}>
+                    <div style={{ width: 32, height: 32 }}>
                       {findImageUrl('right_arrow') ? (
                         <img
                           src={findImageUrl('right_arrow')!}
