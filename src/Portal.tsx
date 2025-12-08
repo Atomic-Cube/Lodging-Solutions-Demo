@@ -205,8 +205,6 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
       }
     />
 
-    <Route path="/videos" element={<MainLayout><Videos /></MainLayout>} />
-    <Route path="/360" element={<MainLayout><ThreeSixty /></MainLayout>} />
 
     {/* ✅ SPECSSHEET — PDF ONLY, SCROLLS PROPERLY */}
     <Route
@@ -221,7 +219,7 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
       }
     />
 
-    <Route path="/timelapses" element={<MainLayout><TimeLapses /></MainLayout>} />
+    
     <Route path="/sitemap" element={<MainLayout><Sitemap /></MainLayout>} />
     <Route path="/404" element={<MainLayout><NotFound /></MainLayout>} />
     <Route path="*" element={<Navigate to="/404" replace />} />
