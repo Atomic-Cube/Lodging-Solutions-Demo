@@ -205,6 +205,10 @@ const Portal: React.FC<PortalProps> = ({ username = "UNKNOWN", closeWindow }) =>
       }
     />
 
+    {/*
+    <Route path="/videos" element={<MainLayout><Videos /></MainLayout>} />
+    <Route path="/360" element={<MainLayout><ThreeSixty /></MainLayout>} />
+    }*/} 
 
     {/* ✅ SPECSSHEET — PDF ONLY, SCROLLS PROPERLY */}
     <Route
